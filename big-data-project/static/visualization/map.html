@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PyDAG | Big Data Project</title>
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+        <link rel="shortcut icon" href="http://cartodb.com/assets/favicon.ico" />
+        <style>
+         html, body, #map {
+             height: 100%;
+             padding: 0;
+             margin: 0;
+         }
+         #menubuttons { position: absolute; top: 15px; right: 10px; width: 450px; height:40px; background: transparent; z-index:40;}
+         #menubuttons a {
+             background: #ffffff;
+             text-decoration: none;
+             cursor: pointer;
+         }
+         #menubuttons a.selected,
+         #menubuttons a:hover {
+             color: #F84F40;
+         }
+         #btn-group-wrapper { box-shadow: 4px 4px 4px #888888;}
+         .btn-group.btn {   border: 0;   padding: 0; }
+         .btn-group.btn > .btn { border-radius: 0; }
+         .btn-group.btn > .dropdown-menu {  text-align: left; }
+         .btn-group.btn:first-child > .btn {
+             -webkit-border-radius: 4px 0 0 4px;
+             -moz-border-radius: 4px 0 0 4px;
+             border-radius: 4px 0 0 4px;
+         }
+         .btn-group.btn:last-child > .btn {
+             -webkit-border-radius: 0 4px 4px 0;
+             -moz-border-radius: 0 4px 4px 0;
+             border-radius: 0 4px 4px 0;
+         }
+         a.weather-disabled, a.weather-disabled:hover {
+             color: #ccc;
+         }
+         
+        </style>
+
+        <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/3.14/themes/css/cartodb.css" />
+        <link rel="stylesheet" href="../css/bootstrap.min.css" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="../js/bootstrap.min.js"></script>
+        <style>
+         .leaflet-fade-anim .leaflet-tile {
+             opacity: 1;
+         }
+         .leaflet-tile {
+             filter: inherit;
+             visibility: initial;
+         }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <div id="menubuttons">
+            <div id="btn-group-wrapper" class="btn-group"> <!-- group container for buttons merging -->
+                <div class="btn btn-group">  <!-- button and dropdown group in one -->
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                        Demo
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#demomode_on" id="demomode_on" class="button demomode_on">On</a></li>
+                        <li><a href="#demomode_off" id="demomode_off" class="button demomode_off selected">Off</a></li>
+                    </ul>
+                </div>
+
+                <div class="btn btn-group" id="weather-buttons">  <!-- button and dropdown group in one -->
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                        Weather
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#weather_good" id="weather_good" class="button weather_good">Good</a></li>
+                        <li><a href="#weather_bad" id="weather_bad" class="button weather_bad">Rain/Snow</a></li>
+                    </ul>
+                </div>
+                <div class="btn btn-group">
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                        Day of Week
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#dow_monday" id="dow_monday" class="button dow_monday">Monday</a></li>
+                        <li><a href="#dow_tuesday" id="dow_tuesday" class="button dow_tuesday">Tuesday</a></li>
+                        <li><a href="#dow_wednesday" id="dow_wednesday" class="button dow_wednesday">Wednesday</a></li>
+                        <li><a href="#dow_thursday" id="dow_thursday" class="button dow_thursday">Thursday</a></li>
+                        <li><a href="#dow_friday" id="dow_friday" class="button dow_friday">Friday</a></li>
+                        <li><a href="#dow_saturday" id="dow_saturday" class="button dow_saturday">Saturday</a></li>
+                        <li><a href="#dow_sunday" id="dow_sunday" class="button dow_sunday">Sunday</a></li>
+                    </ul>
+                </div>
+                <div class="btn btn-group">  <!-- button and dropdown group in one -->
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                        Time of Day
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#tod_00_03" id="tod_00_03" class="button tod_00_03">00:00 - 03:00</a></li>
+                        <li><a href="#tod_03_06" id="tod_03_06" class="button tod_03_06">03:00 - 06:00</a></li>
+                        <li><a href="#tod_06_09" id="tod_06_09" class="button tod_06_09">06:00 - 09:00</a></li>
+                        <li><a href="#tod_09_12" id="tod_09_12" class="button tod_09_12">09:00 - 12:00</a></li>
+                        <li><a href="#tod_12_15" id="tod_12_15" class="button tod_12_15">12:00 - 15:00</a></li>
+                        <li><a href="#tod_15_18" id="tod_15_18" class="button tod_15_18">15:00 - 18:00</a></li>
+                        <li><a href="#tod_18_21" id="tod_18_21" class="button tod_18_21">18:00 - 21:00</a></li>
+                        <li><a href="#tod_21_24" id="tod_21_24" class="button tod_21_24">21:00 - 24:00</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <script type="infowindow/html" id="infowindow_template">
+         <div class="cartodb-popup v2">
+         <a href="#close" class="cartodb-popup-close-button close">x</a>
+         <div class="cartodb-popup-content-wrapper">
+         <div class="cartodb-popup-content">
+         <img style="width: 100%; display: none;" src="">
+         <!-- content.data contains the field info -->
+         <h4>Neighborhood Name</h4>
+         <p>{{content.data.name}}</p>
+         </div>
+         </div>
+         <div class="cartodb-popup-tip-container"></div>
+         </div>
+        </script>
+
+        <!-- include cartodb.js library -->
+        <script src="http://libs.cartocdn.com/cartodb.js/v3/3.14/cartodb.js"></script>
+
+        <script>
+         var name_table = {1: "Red Hook", 2: "Spuyten Duyvil", 3: "Auburndale", 4: "Soho", 5: "Bedford-Stuyvesant", 6: "Murray Hill", 7: "South Bronx", 8: "Little Italy", 9: "Chinatown", 10: "Garment District", 11: "East Village", 12: "Nkew Gardens", 13: "Mott Haven", 28: "East Harlem", 14: "Mapleton-Flatlands", 15: "Boerum Hill", 16: "Union Port", 17: "Morris Heights", 18: "Laurelton", 19: "Central Park", 20: "Greenwich Village", 21: "Park Slope", 22: "Canarsie", 23: "Greenwood", 24: "Hamilton Heights", 25: "Upper East Side", 26: "Lower East Side", 27: "Yorkville", 29: "West Village", 30: "Bensonhurst", 31: "Battery Park", 32: "Woodhaven-Richmond Hill", 33: "Soundview", 34: "Gramercy", 35: "Throggs Neck", 36: "Carnegie Hill", 38: "Morris Park", 39: "Baychester", 58: "Morningside Heights", 37: "College Point", 56: "Sunset Park", 40: "Douglastown-Little Neck", 41: "Queens Village", 42: "Middle Village", 43: "Fordham", 44: "Dyker Heights", 45: "Woodside", 46: "Williams Bridge", 47: "Downtown", 57: "Borough Park", 48: "Rosedale", 49: "Kings Bridge", 50: "Bay Ridge", 51: "Whitestone", 52: "Cobble Hill", 53: "Jamaica", 54: "University Heights", 55: "Coney Island", 59: "Jackson Heights", 60: "East Brooklyn", 61: "Maspeth", 62: "Flatbush", 63: "Glendale", 64: "Country Club", 65: "Harlem", 66: "Midtown", 67: "Queensboro Hill", 68: "Tribeca", 69: "Springfield Gardens", 80: "Carroll Gardens", 70: "Steinway", 71: "North Sutton Area", 72: "Upper West Side", 73: "Williamsburg", 74: "Flushing", 78: "Astoria-Long Island City", 75: "City Island", 76: "Saintalbans", 77: "The Rockaways", 79: "Gravesend-Sheepshead Bay", 81: "Financial District", 82: "Bedford Park", 83: "Hunts Point", 84: "Inwood", 85: "Sunny Side", 86: "Chelsea", 87: "Forest Hills", 92: "Brownsville", 88: "Wakefield-Williamsbridge", 89: "Ridgewood", 90: "Clearview", 91: "Washington Heights", 93: "Bushwick", 94: "Fort Green", 95: "Clinton", 96: "Woodlawn-Nordwood", 97: "High Bridge", 98: "Riverdale", 99: "Eastchester", 100: "Tremont", 101: "Howard Beach", 102: "Utopia", 103: "Parkchester", 104: "Bayside", 105: "Corona"};
+         var demo_mode_weather = {"1": {"3_5": "Unnormal", "6_8": "Unnormal", "9_11": "Unnormal", "18_20": "Unnormal", "15_17": "Unnormal", "21_23": "Normal", "0_2": "Normal", "12_14": "Unnormal"}, "3": {"3_5": "Normal", "6_8": "Normal", "9_11": "Normal", "18_20": "Normal", "15_17": "Unnormal", "21_23": "Unnormal", "0_2": "Normal", "12_14": "Normal"}, "2": {"3_5": "Normal", "6_8": "Normal", "9_11": "Normal", "18_20": "Unnormal", "15_17": "Normal", "21_23": "Unnormal", "0_2": "Normal", "12_14": "Normal"}, "5": {"3_5": "Normal", "6_8": "Normal", "9_11": "Unnormal", "18_20": "Normal", "15_17": "Unnormal", "21_23": "Normal", "0_2": "Normal", "12_14": "Unnormal"}, "4": {"3_5": "Unnormal", "6_8": "Normal", "9_11": "Normal", "18_20": "Normal", "15_17": "Normal", "21_23": "Normal", "0_2": "Unnormal", "12_14": "Unnormal"}, "7": {"3_5": "Normal", "6_8": "Unnormal", "9_11": "Unnormal", "18_20": "Normal", "15_17": "Unnormal", "21_23": "Normal", "0_2": "Normal", "12_14": "Unnormal"}, "6": {"3_5": "Normal", "6_8": "Normal", "9_11": "Unnormal", "18_20": "Normal", "15_17": "Normal", "21_23": "Normal", "0_2": "Normal", "12_14": "Normal"}};
+
+         var sublayers = [];
+         var weather = null;
+         var dayofweek = null;
+         var timeofday = null;
+         var demomode = false;
+         var base_css = "#zillowneighborhoods_ny_merge [=1] { polygon-fill:#FF6600; polygon-opacity: 0.7; line-color: #FFF; line-width: 1; line-opacity: 1;}  #zillowneighborhoods_ny_merge [=0] { polygon-fill:#3E7BB6; polygon-opacity: 0.7; line-color: #FFF; line-width: 1; line-opacity: 1;}";    
+         function main() {
+             cartodb.createVis('map', 'https://glennq.cartodb.com/api/v2/viz/ef8b4226-f6b2-11e4-a9be-0e018d66dc29/viz.json', {
+                 description: true,
+                 tiles_loader: true,
+                 center_lat: 40.7267,
+                 center_lon: -73.8859,
+                 zoom: 11
+             }).done(function(vis, layers) {
+	         // layer 0 is the base layer, layer 1 is cartodb layer
+	         // setInteraction is disabled by default
+	         layers[1].setInteraction(true);
+                 
+	         var map = vis.getNativeMap();
+	         var sublayer = layers[1].getSubLayer(0);
+                 
+	         sublayer.infowindow.set('template', $('#infowindow_template').html());
+                 sublayer.on('featureOver', function(e, latlng, pos, data) {
+
+                     if (weather && dayofweek && timeofday) {                             
+                         var infowindowtext = document.getElementById("infowindow_template").text
+                         var url_src = 'https://s3-us-west-2.amazonaws.com/project-pydag/pic/' + name_table[data.cartodb_id].replace(/ /g, '_') + '_' + weather + '_' + dayofweek + '_' + timeofday + '.png';                     
+                         document.getElementById("infowindow_template").text =
+                         infowindowtext.replace(/src=".*"/, 'src="'+url_src+'"')
+                                       .replace(/display: none/, 'display: block');
+                         sublayer.infowindow.set({'template': $('#infowindow_template').html(),
+                                                  maxHeight: 400
+                         });
+
+                     } else {
+                         var infowindowtext = document.getElementById("infowindow_template").text
+                         document.getElementById("infowindow_template").text =
+                         infowindowtext.replace(/display: block/, 'display: none');
+                         sublayer.infowindow.set({'template': $('#infowindow_template').html(),
+                                                  maxHeight: 400
+                         });
+                     }
+                 });
+                 sublayers.push(sublayer);
+                 
+             }).error(function(err) {
+	         console.log(err);
+	     });
+
+
+             var LayerActions = {
+                 weather_good: function() {
+                     if (!demomode) {
+                         weather = 'Normal';
+                     }
+                     return true;
+                 },
+
+                 weather_bad: function() {
+                     if (!demomode) {
+                         weather = 'Unnormal';
+                     }
+                     return true;
+                 },
+                 dow_monday: function() {
+                     dayofweek = '1';
+                     return true;
+                 },
+                 dow_tuesday: function() {
+                     dayofweek = '2';
+                     return true;
+                 },
+                 dow_wednesday: function() {
+                     dayofweek = '3';
+                     return true;
+                 },
+                 dow_thursday: function() {
+                     dayofweek = '4';
+                     return true;
+                 },
+                 dow_friday: function() {
+                     dayofweek = '5';
+                     return true;
+                 },
+                 dow_saturday: function() {
+                     dayofweek = '6';
+                     return true;
+                 },
+                 dow_sunday: function() {
+                     dayofweek = '7';
+                     return true;
+                 },
+                 tod_00_03: function() {
+                     timeofday = '0_2';
+                     return true;
+                 },
+                 tod_03_06: function() {
+                     timeofday = '3_5';
+                     return true;
+                 },
+                 tod_06_09: function() {
+                     timeofday = '6_8';
+                     return true;
+                 },
+                 tod_09_12: function() {
+                     timeofday = '9_11';
+                     return true;
+                 },
+                 tod_12_15: function() {
+                     timeofday = '12_14';
+                     return true;
+                 },
+                 tod_15_18: function() {
+                     timeofday = '15_17';
+                     return true;
+                 },
+                 tod_18_21: function() {
+                     timeofday = '18_20';
+                     return true;
+                 },
+                 tod_21_24: function() {
+                     timeofday = '21_23';
+                     return true;
+                 },
+                 demomode_on: function() {
+                     demomode = true;
+                     $('#weather-buttons').children().addClass('disabled');
+                     return true;
+                 },
+                 demomode_off: function() {
+                     demomode = false;
+                     sublayers[0].setCartoCSS("#zillowneighborhoods_ny_merge { polygon-fill: #FF6600;  polygon-opacity: 0.7;  line-color: #FFF;  line-width: 1;  line-opacity: 1;}");
+                     $('#weather-buttons').children().removeClass('disabled');
+                     return true;
+                 }
+             };
+
+	     $('.button').click(function() {
+	         $(this).parent().siblings().children().removeClass('selected');
+	         $(this).addClass('selected');
+	         LayerActions[$(this).attr('id')]();
+                 if (demomode) {
+                     sublayers[0].setCartoCSS(base_css.replace(/=/g, '_'+dayofweek+'_'+timeofday+'='));
+                     weather = demo_mode_weather[dayofweek][timeofday];
+                 };
+	     });
+
+         }
+         window.onload = main;         
+        </script>
+    </body>
+</html>
