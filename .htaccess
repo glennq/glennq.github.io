@@ -1,0 +1,3 @@
+# BEGIN 302 Redirects
+Redirect 302 /temp/redirect.html http://i.sodao.com/u2865563
+# END 302 Redirects
